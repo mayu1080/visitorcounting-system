@@ -4,7 +4,7 @@
 - 入力: data/survey_responses.csv
 - Supabase Table Editor からExportしたCSVを使う
 - answers カラム内の questionId ごとに集計する
-- 質問ごとに横棒グラフを outputs/charts/{question_id}.png に出力する
+- 全質問の横棒グラフを1枚にまとめて outputs/chart.png に出力する
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ import pandas as pd
 INPUT_CSV = Path("data/survey_responses_rows.csv")
 OUTPUT_DIR = Path("outputs")
 SUMMARY_CSV = OUTPUT_DIR / "summary.csv"
-CHARTS_DIR = OUTPUT_DIR / "charts"
+CHART_PNG = OUTPUT_DIR / "chart.png"
 
 QUESTION_TITLES = {
     "q1": "今日は何名様でのご来場ですか？",
@@ -88,7 +88,6 @@ def main() -> None:
     )
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    CHARTS_DIR.mkdir(parents=True, exist_ok=True)
     counts.to_csv(SUMMARY_CSV, index=False, encoding="utf-8-sig")
     print(f"summary saved: {SUMMARY_CSV}")
 
@@ -100,20 +99,32 @@ def main() -> None:
     ]
     matplotlib.rcParams["axes.unicode_minus"] = False
 
-    for question_id, group in counts.groupby("question_id", sort=False):
+    question_ids = counts["question_id"].drop_duplicates().tolist()
+    heights = [
+        max(2.0, 0.6 * len(QUESTION_OPTIONS_ORDER.get(question_id, [])) + 1.4)
+        for question_id in question_ids
+    ]
+    fig, axes = plt.subplots(
+        len(question_ids),
+        1,
+        figsize=(10, sum(heights)),
+        gridspec_kw={"height_ratios": heights},
+    )
+    if len(question_ids) == 1:
+        axes = [axes]
+
+    for ax, question_id in zip(axes, question_ids):
+        group = counts[counts["question_id"] == question_id]
         short_title = QUESTION_SHORT_TITLES.get(question_id, question_id)
         answers_list = group["answer"].tolist()
         count_list = group["count"].tolist()
 
         y_positions = list(range(len(answers_list)))
-        fig_height = max(3, 0.7 * len(answers_list) + 2)
-        fig, ax = plt.subplots(figsize=(8, fig_height))
         bars = ax.barh(y_positions, count_list)
-
         ax.set_yticks(y_positions)
         ax.set_yticklabels(answers_list)
         ax.invert_yaxis()
-        ax.set_title(short_title, fontsize=16, pad=15)
+        ax.set_title(short_title, fontsize=14, pad=10)
         ax.set_xlabel("件数")
         ax.grid(axis="x", linestyle="--", alpha=0.3)
         ax.set_axisbelow(True)
@@ -128,14 +139,13 @@ def main() -> None:
                 bar.get_y() + bar.get_height() / 2,
                 str(count),
                 va="center",
-                fontsize=12,
+                fontsize=11,
             )
 
-        plt.tight_layout()
-        chart_path = CHARTS_DIR / f"{question_id}.png"
-        plt.savefig(chart_path, dpi=150)
-        plt.close(fig)
-        print(f"chart saved: {chart_path}")
+    plt.tight_layout()
+    plt.savefig(CHART_PNG, dpi=150)
+    plt.close(fig)
+    print(f"chart saved: {CHART_PNG}")
 
 
 if __name__ == "__main__":
