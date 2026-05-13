@@ -2,25 +2,28 @@
 
 前提:
 - 入力: data/survey_responses.csv
-- Supabase Table Editor からExportしたCSVを使う
+- Supabase API から取得したCSV、または Supabase Table Editor からExportしたCSVを使う
+- AGGREGATE_EVENT_ID / AGGREGATE_ENVIRONMENT が設定されていれば絞り込む
 - answers カラム内の questionId ごとに集計する
-- 全質問の横棒グラフを1枚にまとめて outputs/chart.png に出力する
+- 全質問の横棒グラフを1枚にまとめて outputs/{event_id}/chart.png に出力する
 """
 
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
+from dotenv import load_dotenv
+from matplotlib import font_manager
 
 
+ENV_FILE = Path(".env.local")
 INPUT_CSV = Path("data/survey_responses.csv")
 OUTPUT_DIR = Path("outputs")
-SUMMARY_CSV = OUTPUT_DIR / "summary.csv"
-CHART_PNG = OUTPUT_DIR / "chart.png"
 
 QUESTION_TITLES = {
     "q1": "今日は何名様でのご来場ですか？",
@@ -45,6 +48,10 @@ QUESTION_OPTIONS_ORDER = {
 
 
 def main() -> None:
+    load_dotenv(ENV_FILE)
+    event_id_filter = os.environ.get("AGGREGATE_EVENT_ID")
+    environment_filter = os.environ.get("AGGREGATE_ENVIRONMENT")
+
     if not INPUT_CSV.exists():
         raise SystemExit(f"入力CSVが見つかりません: {INPUT_CSV}")
 
@@ -52,18 +59,32 @@ def main() -> None:
     if "answers" not in df.columns:
         raise SystemExit("'answers' カラムがCSVに存在しません")
 
+    df = apply_filters(df, event_id_filter, environment_filter)
+
     rows = []
-    for answers_json in df["answers"].dropna():
+    for _, response in df.dropna(subset=["answers"]).iterrows():
+        answers_json = response["answers"]
         answers = json.loads(answers_json)
         for question_id, answer in answers.items():
-            rows.append({"question_id": question_id, "answer": answer})
+            rows.append(
+                {
+                    "event_id": response.get("event_id", ""),
+                    "environment": response.get("environment", ""),
+                    "survey_version": response.get("survey_version", ""),
+                    "question_id": question_id,
+                    "answer": answer,
+                }
+            )
 
     if not rows:
         raise SystemExit("集計できる回答が1件も見つかりません")
 
     answers_df = pd.DataFrame(rows)
     counts = (
-        answers_df.groupby(["question_id", "answer"])
+        answers_df.groupby(
+            ["event_id", "environment", "survey_version", "question_id", "answer"],
+            dropna=False,
+        )
         .size()
         .reset_index(name="count")
     )
@@ -87,19 +108,14 @@ def main() -> None:
         counts["question_id"].map(QUESTION_TITLES).fillna(counts["question_id"]),
     )
 
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    counts.to_csv(SUMMARY_CSV, index=False, encoding="utf-8-sig")
-    print(f"summary saved: {SUMMARY_CSV}")
+    output_dir = get_output_dir(event_id_filter)
+    summary_csv = output_dir / "summary.csv"
+    chart_png = output_dir / "chart.png"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    counts.to_csv(summary_csv, index=False, encoding="utf-8-sig")
+    print(f"summary saved: {summary_csv}")
 
-    matplotlib.rcParams["font.family"] = [
-        "Yu Gothic",
-        "Meiryo",
-        "MS Gothic",
-        "Hiragino Sans",
-        "Hiragino Maru Gothic Pro",
-        "Arial Unicode MS",
-        "sans-serif",
-    ]
+    set_japanese_font()
     matplotlib.rcParams["axes.unicode_minus"] = False
 
     question_ids = counts["question_id"].drop_duplicates().tolist()
@@ -146,9 +162,59 @@ def main() -> None:
             )
 
     plt.tight_layout()
-    plt.savefig(CHART_PNG, dpi=150)
+    plt.savefig(chart_png, dpi=150)
     plt.close(fig)
-    print(f"chart saved: {CHART_PNG}")
+    print(f"chart saved: {chart_png}")
+
+
+def apply_filters(
+    df: pd.DataFrame,
+    event_id_filter: str | None,
+    environment_filter: str | None,
+) -> pd.DataFrame:
+    filtered = df
+    if event_id_filter:
+        require_column(filtered, "event_id", "AGGREGATE_EVENT_ID")
+        filtered = filtered[filtered["event_id"] == event_id_filter]
+        print(f"event_id filter: {event_id_filter} ({len(filtered)} rows)")
+
+    if environment_filter:
+        require_column(filtered, "environment", "AGGREGATE_ENVIRONMENT")
+        filtered = filtered[filtered["environment"] == environment_filter]
+        print(f"environment filter: {environment_filter} ({len(filtered)} rows)")
+
+    return filtered
+
+
+def require_column(df: pd.DataFrame, column: str, env_name: str) -> None:
+    if column not in df.columns:
+        raise SystemExit(
+            f"{env_name} が設定されていますが、CSVに '{column}' カラムが存在しません。"
+            "Supabase のカラム追加後に fetch_responses.py を再実行してください。"
+        )
+
+
+def get_output_dir(event_id_filter: str | None) -> Path:
+    if not event_id_filter:
+        return OUTPUT_DIR
+    return OUTPUT_DIR / event_id_filter
+
+
+def set_japanese_font() -> None:
+    candidates = [
+        "Yu Gothic",
+        "Meiryo",
+        "MS Gothic",
+        "Hiragino Sans",
+        "Hiragino Maru Gothic Pro",
+        "Arial Unicode MS",
+    ]
+    installed_fonts = {font.name for font in font_manager.fontManager.ttflist}
+    for candidate in candidates:
+        if candidate in installed_fonts:
+            matplotlib.rcParams["font.family"] = candidate
+            return
+    matplotlib.rcParams["font.family"] = "sans-serif"
 
 
 if __name__ == "__main__":

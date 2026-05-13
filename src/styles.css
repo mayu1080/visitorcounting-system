@@ -14,15 +14,17 @@
   --space-lg: 48px;
 
   /* ===== 文字サイズ ===== */
-  --font-title: 40px;
-  --font-lead: 22px;
-  --font-question: 32px;
-  --font-button: 24px;
-  --font-button-primary: 26px;
-  --font-app-title: 28px;
-  --font-progress: 18px;
-  --font-note: 16px;
-  --font-error: 18px;
+  --font-scale: 1;
+  --font-title: calc(40px * var(--font-scale));
+  --font-lead: calc(22px * var(--font-scale));
+  --font-question: calc(32px * var(--font-scale));
+  --font-button: calc(24px * var(--font-scale));
+  --font-button-primary: calc(26px * var(--font-scale));
+  --font-app-title: calc(28px * var(--font-scale));
+  --font-subtitle: calc(16px * var(--font-scale));
+  --font-progress: calc(18px * var(--font-scale));
+  --font-note: calc(16px * var(--font-scale));
+  --font-error: calc(18px * var(--font-scale));
 
   /* ===== 形状 ===== */
   --radius: 16px;
@@ -58,10 +60,19 @@ body {
 .app-header {
   width: 100%;
   max-width: var(--content-max-width);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
   font-size: var(--font-app-title);
   font-weight: 700;
   text-align: center;
   color: var(--color-fg);
+}
+
+.app-subtitle {
+  color: var(--color-muted);
+  font-size: var(--font-subtitle);
+  font-weight: 400;
 }
 
 .app-main {

@@ -83,13 +83,13 @@
 このコマンドは内部で以下を順に実行する。
 
 1. Supabase APIから回答を取得し、`data/survey_responses.csv` に保存
-2. `outputs/summary.csv` と `outputs/chart.png` を生成
+2. `outputs/{event_id}/summary.csv` と `outputs/{event_id}/chart.png` を生成
 
 ## 出力
 
 - `data/survey_responses.csv`: Supabase APIから取得した回答データ
-- `outputs/summary.csv`: 質問ID・回答ごとの件数
-- `outputs/chart.png`: 全質問を1枚にまとめた横棒グラフ
+- `outputs/{event_id}/summary.csv`: 質問ID・回答ごとの件数
+- `outputs/{event_id}/chart.png`: 全質問を1枚にまとめた横棒グラフ
 
 ## 初回セットアップ
 
@@ -128,14 +128,21 @@ Mac:
 ```env
 VITE_SUPABASE_URL=https://xxxxxxxxxxxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=ey...
+VITE_SURVEY_CONFIG=natori-park
+VITE_ENVIRONMENT=test
 SUPABASE_URL=https://xxxxxxxxxxxxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=ey...
+AGGREGATE_EVENT_ID=natori-park
+AGGREGATE_ENVIRONMENT=production
 ```
 
 注意:
 
 - `VITE_SUPABASE_ANON_KEY` はフロントエンド用
+- `VITE_SURVEY_CONFIG` は使用するアンケート設定
+- `VITE_ENVIRONMENT` は回答保存時の環境名（本番は `production`、テストは `test`）
 - `SUPABASE_SERVICE_ROLE_KEY` はローカルPython集計用
+- `AGGREGATE_EVENT_ID` / `AGGREGATE_ENVIRONMENT` は集計対象の絞り込み用
 - `SUPABASE_SERVICE_ROLE_KEY` は管理者権限のキーなので、GitHubにpushしない
 - `.env.local` は `.gitignore` に登録済み
 

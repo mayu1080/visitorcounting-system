@@ -62,7 +62,16 @@ def main() -> None:
                 else v
             )
     else:
-        df = pd.DataFrame(columns=["id", "created_at", "answers"])
+        df = pd.DataFrame(
+            columns=[
+                "id",
+                "created_at",
+                "event_id",
+                "environment",
+                "survey_version",
+                "answers",
+            ]
+        )
 
     OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(OUTPUT_CSV, index=False, encoding="utf-8-sig")

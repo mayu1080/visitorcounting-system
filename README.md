@@ -37,7 +37,19 @@ Supabase に回答を保存する。集計は別ドキュメント `OPERATIONS.m
 | --- | --- | --- |
 | id | uuid | 主キー |
 | created_at | timestamptz | 回答日時 |
+| event_id | text | 案件識別子 |
+| environment | text | `test` / `production` |
+| survey_version | text | アンケート版 |
 | answers | jsonb | 回答内容 |
+
+既存テーブルに追加する場合:
+
+```sql
+alter table survey_responses
+add column if not exists event_id text,
+add column if not exists environment text,
+add column if not exists survey_version text;
+```
 
 ### RLS（行レベルセキュリティ）
 
@@ -65,6 +77,8 @@ with check (true);
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
+- `VITE_SURVEY_CONFIG`: 使用するアンケート設定（例: `natori-park`）
+- `VITE_ENVIRONMENT`: 保存時の環境名（`test` / `production`）
 
 ## デプロイ（Vercel）
 
@@ -74,10 +88,15 @@ with check (true);
 2. [Vercel](https://vercel.com) にログイン → **Add New… → Project**
 3. GitHub リポジトリを Import
 4. **Framework Preset**: `Vite`（自動検出される）
-5. **Environment Variables** に以下を追加（`Production` / `Preview` / `Development` すべてにチェック）:
+5. **Environment Variables** に以下を追加:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
-6. **Deploy** を押す → 1〜2分で公開URL（例: `https://visitorcounting-system.vercel.app`）が発行される
+   - `VITE_SURVEY_CONFIG`（例: `natori-park`）
+   - `VITE_ENVIRONMENT`
+6. `VITE_ENVIRONMENT` は環境ごとに値を分ける
+   - Production: `production`
+   - Preview / Development: `test`
+7. **Deploy** を押す → 1〜2分で公開URL（例: `https://visitorcounting-system.vercel.app`）が発行される
 
 ### 2回目以降
 
@@ -108,6 +127,65 @@ npm run dev
 ## 集計・グラフ化
 
 オフィスPCでの集計・グラフ生成は `OPERATIONS.md` 参照。
+
+## 複数案件対応
+
+コードベースは1つのまま、案件ごとのアンケート内容・表示文言・テーマを `src/surveys/` 配下の設定ファイルで切り替える。
+
+### 設定ファイル
+
+- `src/surveys/types.ts`: survey config の型定義
+- `src/surveys/default.ts`: `VITE_SURVEY_CONFIG` 未設定時の設定
+- `src/surveys/natoriPark.ts`: なとりぱーく用の設定
+- `src/surveyConfig.ts`: `VITE_SURVEY_CONFIG` を見て設定を選ぶローダー
+
+### 案件追加手順
+
+1. `src/surveys/yourEvent.ts` を作成
+2. `SurveyConfig` 型に合わせて以下を定義
+   - `eventId`
+   - `surveyVersion`（例: `v1.0.0_2026-05-13`）
+   - 表示文言
+   - `questions`
+   - `theme`
+3. `src/surveyConfig.ts` の `surveyConfigs` に追加
+4. `.env.local` または Vercel の Environment Variables で `VITE_SURVEY_CONFIG` を追加したキー名に変更
+
+### theme 設定
+
+将来UI編集画面を作れるよう、表示テーマはsurvey config内の `theme` に持たせる。
+
+```ts
+theme: {
+  backgroundColor: '#0f1115',
+  textColor: '#f5f5f7',
+  accentColor: '#ffc857',
+  buttonStyle: 'rounded',
+  fontScale: 1,
+}
+```
+
+`buttonStyle` は `rounded` / `square` / `pill` を指定できる。
+
+### 本番切り替え
+
+Vite の環境変数はビルド時に固定される。案件を切り替える場合は、Vercel の Environment Variables を変更して Redeploy する。
+
+- `VITE_SURVEY_CONFIG`: 使用する案件設定
+- `VITE_ENVIRONMENT`: 本番は `production`、テストは `test`
+
+複数案件を同時運用する場合は、同じGitHubリポジトリを使って **Vercelプロジェクトを案件ごとに分ける**。プロジェクトごとに `VITE_SURVEY_CONFIG` と公開URLを分ける。
+
+### 集計の絞り込み
+
+`.env.local` に以下を設定すると、集計時に対象を絞り込める。
+
+```env
+AGGREGATE_EVENT_ID=natori-park
+AGGREGATE_ENVIRONMENT=production
+```
+
+出力先は `outputs/{event_id}/summary.csv` と `outputs/{event_id}/chart.png`。
 
 ## 実装制約
 

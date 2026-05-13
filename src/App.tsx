@@ -1,19 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { supabase } from './supabase'
-import { questions } from './questions'
+import { surveyConfig, surveyEnvironment } from './surveyConfig'
 
 type Screen = 'question' | 'thanks'
 type Answers = Record<string, string>
 
 const THANKS_TIMEOUT_MS = 3000
-
-const LABELS = {
-  appTitle: 'なとりぱーくご利用についてのアンケート',
-  progressPrefix: '質問',
-  thanksTitle: 'ご回答ありがとうございました。',
-  thanksNote: 'このページは自動的に更新されます。',
-  submitError: '送信に失敗しました。もう一度お試しください。',
-} as const
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('question')
@@ -22,8 +14,20 @@ export default function App() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const { questions, theme } = surveyConfig
   const question = questions[currentQuestionIndex]
   const isLastQuestion = currentQuestionIndex === questions.length - 1
+  const themeStyle = useMemo(
+    () =>
+      ({
+        '--color-bg': theme.backgroundColor,
+        '--color-fg': theme.textColor,
+        '--color-accent': theme.accentColor,
+        '--font-scale': String(theme.fontScale),
+        '--radius': getButtonRadius(theme.buttonStyle),
+      }) as CSSProperties,
+    [theme],
+  )
 
   useEffect(() => {
     if (screen !== 'thanks') return
@@ -55,23 +59,33 @@ export default function App() {
     setError(null)
     const { error: insertError } = await supabase
       .from('survey_responses')
-      .insert({ answers: finalAnswers })
+      .insert({
+        event_id: surveyConfig.eventId,
+        environment: surveyEnvironment,
+        survey_version: surveyConfig.surveyVersion,
+        answers: finalAnswers,
+      })
     setSubmitting(false)
     if (insertError) {
-      setError(LABELS.submitError)
+      setError(surveyConfig.submitError)
       return
     }
     setScreen('thanks')
   }
 
   return (
-    <div className="app">
-      <header className="app-header">{LABELS.appTitle}</header>
+    <div className={`app button-style-${theme.buttonStyle}`} style={themeStyle}>
+      <header className="app-header">
+        {surveyConfig.appTitle}
+        {surveyConfig.appSubtitle && (
+          <span className="app-subtitle">{surveyConfig.appSubtitle}</span>
+        )}
+      </header>
       <main className="app-main">
         {screen === 'question' && (
           <div className="screen">
             <p className="progress">
-              {LABELS.progressPrefix} {currentQuestionIndex + 1} / {questions.length}
+              {surveyConfig.progressPrefix} {currentQuestionIndex + 1} / {questions.length}
             </p>
             <h2 className="question">{question.text}</h2>
             <div className="options">
@@ -92,11 +106,17 @@ export default function App() {
 
         {screen === 'thanks' && (
           <div className="screen">
-            <h1 className="title">{LABELS.thanksTitle}</h1>
-            <p className="note">{LABELS.thanksNote}</p>
+            <h1 className="title">{surveyConfig.thanksTitle}</h1>
+            <p className="note">{surveyConfig.thanksNote}</p>
           </div>
         )}
       </main>
     </div>
   )
+}
+
+function getButtonRadius(buttonStyle: typeof surveyConfig.theme.buttonStyle) {
+  if (buttonStyle === 'square') return '4px'
+  if (buttonStyle === 'pill') return '999px'
+  return '16px'
 }
