@@ -5,6 +5,8 @@ dist
 .DS_Store
 .secrets.local.md
 .venv
+__pycache__/
+*.pyc
 data/*.csv
 outputs/*
 !outputs/.gitkeep
