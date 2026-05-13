@@ -95,6 +95,9 @@ def main() -> None:
         "Yu Gothic",
         "Meiryo",
         "MS Gothic",
+        "Hiragino Sans",
+        "Hiragino Maru Gothic Pro",
+        "Arial Unicode MS",
         "sans-serif",
     ]
     matplotlib.rcParams["axes.unicode_minus"] = False
