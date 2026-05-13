@@ -29,8 +29,7 @@
 
 ## 保存
 
-Supabase に回答を保存する。
-集計はオフィスPCから Supabase の Table Editor / CSV Export で確認。
+Supabase に回答を保存する。集計は別ドキュメント `OPERATIONS.md` 参照。
 
 テーブル例: `survey_responses`
 
@@ -40,26 +39,63 @@ Supabase に回答を保存する。
 | created_at | timestamptz | 回答日時 |
 | answers | jsonb | 回答内容 |
 
-環境変数:
+### RLS（行レベルセキュリティ）
+
+URLが公開されても改ざん・閲覧されないよう、Supabase 側で以下を設定する。
+
+```sql
+alter table survey_responses enable row level security;
+
+drop policy if exists "allow anon insert" on survey_responses;
+drop policy if exists "allow anon select" on survey_responses;
+drop policy if exists "allow anon update" on survey_responses;
+drop policy if exists "allow anon delete" on survey_responses;
+
+create policy "allow anon insert"
+on survey_responses
+for insert
+to anon
+with check (true);
+```
+
+- フロントで使う `anon` キーには **INSERT のみ** 許可
+- 集計用 Python スクリプトは `service_role` キーで RLS をバイパス
+
+### 環境変数（フロントエンド）
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
 
-## デプロイ
+## デプロイ（Vercel）
 
-Vercel にデプロイする。
+### 初回デプロイ
 
-1. GitHub に push
-2. Vercel でリポジトリを選択（Framework: Vite）
-3. 環境変数を設定して Deploy
-4. 発行された URL を現場タブレットで開く
+1. GitHub に push（リポジトリはPublic / Privateどちらでも可）
+2. [Vercel](https://vercel.com) にログイン → **Add New… → Project**
+3. GitHub リポジトリを Import
+4. **Framework Preset**: `Vite`（自動検出される）
+5. **Environment Variables** に以下を追加（`Production` / `Preview` / `Development` すべてにチェック）:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+6. **Deploy** を押す → 1〜2分で公開URL（例: `https://visitorcounting-system.vercel.app`）が発行される
+
+### 2回目以降
+
+`main` ブランチへ push すると Vercel が自動で再デプロイする。手動操作は不要。
+
+### 動作確認
+
+1. PCのブラウザで公開URLを開く → アンケート画面が表示される
+2. 1件回答して送信完了画面が出る
+3. Supabase Table Editor で `survey_responses` に行が追加されていることを確認
 
 ## タブレット運用
 
-- Android タブレットのブラウザで対象 URL を開く
+- Android タブレットのブラウザで Vercel の公開URLを開く
 - 全画面表示にする（Chrome のフルスクリーン or Fully Kiosk Browser）
 - スリープを OFF にする（設定 → ディスプレイ → スリープしない、または充電中スリープしない）
 - 電源を接続したまま設置
+- 詳細な現場運用手順は `OPERATIONS.md` 参照
 
 ## 起動方法（開発）
 
@@ -69,41 +105,9 @@ cp .env.example .env.local   # Supabase の URL と anon key を記入
 npm run dev
 ```
 
-## 集計・グラフ化（オフィスPC）
+## 集計・グラフ化
 
-ローカルPCのPythonスクリプトから Supabase API で直接取得し、集計・棒グラフ化する。
-
-### .env.local に追加する環境変数
-
-```
-SUPABASE_URL=https://xxxxxxxxxxxxx.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=ey...（Supabase ダッシュボード → Project Settings → API → "service_role" のキー）
-```
-
-⚠️ `SUPABASE_SERVICE_ROLE_KEY` は管理者権限のキー。**フロントエンドや Git に絶対に含めない**こと。`.gitignore` に `.env.local` が登録済みであることを確認。
-
-### 手順
-
-1. 依存インストール（初回のみ）
-   ```bash
-   .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-   ```
-2. API から取得して CSV 保存
-   ```bash
-   .\.venv\Scripts\python.exe scripts\fetch_responses.py
-   ```
-   → `data/survey_responses.csv` に保存される
-3. 集計＋グラフ生成
-   ```bash
-   .\.venv\Scripts\python.exe scripts\analyze_responses.py
-   ```
-4. 出力を確認
-   - `outputs/summary.csv`: 質問ID・回答ごとの件数
-   - `outputs/chart.png`: 全質問を1枚にまとめた横棒グラフ
-
-### 旧手順（手動 CSV エクスポート）
-
-`fetch_responses.py` が使えない環境では、Supabase Table Editor からCSVを手動エクスポートし、`data/survey_responses.csv` として配置すれば `analyze_responses.py` で同様に集計可能。
+オフィスPCでの集計・グラフ生成は `OPERATIONS.md` 参照。
 
 ## 実装制約
 
