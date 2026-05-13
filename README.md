@@ -71,21 +71,39 @@ npm run dev
 
 ## 集計・グラフ化（オフィスPC）
 
-Supabase Table Editor からCSVをエクスポートし、Pythonで集計・棒グラフ化する。
+ローカルPCのPythonスクリプトから Supabase API で直接取得し、集計・棒グラフ化する。
 
-1. Supabase ダッシュボード → Table Editor → `survey_responses` → Export to CSV
-2. 取得したCSVを `data/survey_responses_rows.csv` として配置（Supabase Exportのデフォルト名のまま）
-3. 依存インストール
+### .env.local に追加する環境変数
+
+```
+SUPABASE_URL=https://xxxxxxxxxxxxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=ey...（Supabase ダッシュボード → Project Settings → API → "service_role" のキー）
+```
+
+⚠️ `SUPABASE_SERVICE_ROLE_KEY` は管理者権限のキー。**フロントエンドや Git に絶対に含めない**こと。`.gitignore` に `.env.local` が登録済みであることを確認。
+
+### 手順
+
+1. 依存インストール（初回のみ）
    ```bash
-   pip install -r requirements.txt
+   .\.venv\Scripts\python.exe -m pip install -r requirements.txt
    ```
-4. スクリプト実行
+2. API から取得して CSV 保存
    ```bash
-   python scripts/analyze_responses.py
+   .\.venv\Scripts\python.exe scripts\fetch_responses.py
    ```
-5. 出力を確認
+   → `data/survey_responses.csv` に保存される
+3. 集計＋グラフ生成
+   ```bash
+   .\.venv\Scripts\python.exe scripts\analyze_responses.py
+   ```
+4. 出力を確認
    - `outputs/summary.csv`: 質問ID・回答ごとの件数
    - `outputs/chart.png`: 全質問を1枚にまとめた横棒グラフ
+
+### 旧手順（手動 CSV エクスポート）
+
+`fetch_responses.py` が使えない環境では、Supabase Table Editor からCSVを手動エクスポートし、`data/survey_responses.csv` として配置すれば `analyze_responses.py` で同様に集計可能。
 
 ## 実装制約
 

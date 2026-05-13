@@ -5,3 +5,6 @@ dist
 .DS_Store
 .secrets.local.md
 .venv
+data/*.csv
+outputs/*
+!outputs/.gitkeep

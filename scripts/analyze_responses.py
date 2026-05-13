@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-INPUT_CSV = Path("data/survey_responses_rows.csv")
+INPUT_CSV = Path("data/survey_responses.csv")
 OUTPUT_DIR = Path("outputs")
 SUMMARY_CSV = OUTPUT_DIR / "summary.csv"
 CHART_PNG = OUTPUT_DIR / "chart.png"
