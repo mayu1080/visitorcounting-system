@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { supabase } from './supabase'
 import { surveyConfig, surveyEnvironment } from './surveyConfig'
 
-type Screen = 'question' | 'thanks'
+type Screen = 'question' | 'confirm' | 'thanks'
 type Answers = Record<string, string>
 
 const THANKS_TIMEOUT_MS = 3000
@@ -16,7 +16,9 @@ export default function App() {
 
   const { questions, theme } = surveyConfig
   const question = questions[currentQuestionIndex]
+  const isFirstQuestion = currentQuestionIndex === 0
   const isLastQuestion = currentQuestionIndex === questions.length - 1
+  const hasAnsweredCurrent = Boolean(answers[question.id])
   const themeStyle = useMemo(
     () =>
       ({
@@ -31,29 +33,47 @@ export default function App() {
 
   useEffect(() => {
     if (screen !== 'thanks') return
-    const t = setTimeout(() => {
-      setScreen('question')
-      setCurrentQuestionIndex(0)
-      setAnswers({})
-      setError(null)
-      setSubmitting(false)
-    }, THANKS_TIMEOUT_MS)
+    const t = setTimeout(resetSurvey, THANKS_TIMEOUT_MS)
     return () => clearTimeout(t)
   }, [screen])
+
+  function resetSurvey() {
+    setScreen('question')
+    setCurrentQuestionIndex(0)
+    setAnswers({})
+    setError(null)
+    setSubmitting(false)
+  }
 
   function handleAnswer(value: string) {
     if (submitting) return
     setError(null)
-    const updatedAnswers = { ...answers, [question.id]: value }
-    setAnswers(updatedAnswers)
+    setAnswers((current) => ({ ...current, [question.id]: value }))
+  }
+
+  function handleBack() {
+    if (submitting || isFirstQuestion) return
+    setError(null)
+    setCurrentQuestionIndex((index) => index - 1)
+  }
+
+  function handleNext() {
+    if (submitting || !hasAnsweredCurrent) return
+    setError(null)
     if (isLastQuestion) {
-      void submit(updatedAnswers)
+      setScreen('confirm')
     } else {
       setCurrentQuestionIndex((index) => index + 1)
     }
   }
 
-  async function submit(finalAnswers: Answers) {
+  function handleConfirmBack() {
+    if (submitting) return
+    setError(null)
+    setScreen('question')
+  }
+
+  async function handleSubmit() {
     if (submitting) return
     setSubmitting(true)
     setError(null)
@@ -63,7 +83,7 @@ export default function App() {
         event_id: surveyConfig.eventId,
         environment: surveyEnvironment,
         survey_version: surveyConfig.surveyVersion,
-        answers: finalAnswers,
+        answers,
       })
     setSubmitting(false)
     if (insertError) {
@@ -101,6 +121,60 @@ export default function App() {
               ))}
             </div>
             {error && <p className="error">{error}</p>}
+            <div className="nav">
+              <button
+                className="nav-button secondary"
+                onClick={handleBack}
+                disabled={isFirstQuestion || submitting}
+              >
+                {surveyConfig.backButton}
+              </button>
+              <button
+                className="nav-button primary"
+                onClick={handleNext}
+                disabled={!hasAnsweredCurrent || submitting}
+              >
+                {surveyConfig.nextButton}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {screen === 'confirm' && (
+          <div className="screen">
+            <h2 className="question">{surveyConfig.confirmTitle}</h2>
+            <ul className="review">
+              {questions.map((q) => (
+                <li key={q.id} className="review-item">
+                  <span className="review-question">{q.shortTitle ?? q.text}</span>
+                  <span className="review-answer">{answers[q.id] ?? ''}</span>
+                </li>
+              ))}
+            </ul>
+            {error && <p className="error">{error}</p>}
+            <div className="nav">
+              <button
+                className="nav-button secondary"
+                onClick={resetSurvey}
+                disabled={submitting}
+              >
+                {surveyConfig.confirmResetButton}
+              </button>
+              <button
+                className="nav-button primary"
+                onClick={handleSubmit}
+                disabled={submitting}
+              >
+                {surveyConfig.confirmSubmitButton}
+              </button>
+            </div>
+            <button
+              className="link-button"
+              onClick={handleConfirmBack}
+              disabled={submitting}
+            >
+              ← {surveyConfig.backButton}
+            </button>
           </div>
         )}
 

@@ -19,6 +19,11 @@ export type SurveyConfig = {
   appTitle: string
   appSubtitle?: string
   progressPrefix: string
+  backButton: string
+  nextButton: string
+  confirmTitle: string
+  confirmSubmitButton: string
+  confirmResetButton: string
   thanksTitle: string
   thanksNote: string
   submitError: string
