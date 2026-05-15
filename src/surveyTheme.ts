@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import type { CSSProperties } from 'react'
-import { themeLengthToCss } from './surveys/loadSurveyJson'
+import { themeLengthToCss } from './surveys/themeLength'
 import type { Theme } from './surveys/types'
 
 export function getButtonRadius(buttonStyle: Theme['buttonStyle']): string {

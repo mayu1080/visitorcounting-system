@@ -1,4 +1,5 @@
 import type { SurveyConfig, Theme } from './types'
+import { normalizeThemePxFields } from './themeLength'
 
 /** ジェネレータのダウンロード形式（survey ラップ）または SurveyConfig 単体のどちらも受け付ける */
 type SurveyExportFile = {
@@ -7,47 +8,8 @@ type SurveyExportFile = {
   survey?: SurveyConfig
 }
 
-const THEME_PX_KEYS: (keyof Theme)[] = [
-  'titleFontSize',
-  'subtitleFontSize',
-  'questionFontSize',
-  'optionFontSize',
-  'buttonFontSize',
-  'optionButtonHeight',
-  'actionButtonHeight',
-  'buttonBorderRadius',
-  'buttonPaddingX',
-  'buttonPaddingY',
-]
-
-/** ジェネレータ JSON では数値（20）や文字列（"20" / "20px"）のどちらもあり得る */
-export function themeLengthToCss(value: unknown): string | undefined {
-  if (value === undefined || value === null) return undefined
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return `${value}px`
-  }
-  if (typeof value === 'string') {
-    const v = value.trim()
-    if (!v) return undefined
-    if (/^\d+(\.\d+)?$/.test(v)) return `${v}px`
-    return v
-  }
-  return undefined
-}
-
-/** JSON 由来の theme で単位を px に揃える */
 function normalizeThemeUnits(theme: Theme): Theme {
-  const t = { ...theme }
-  for (const key of THEME_PX_KEYS) {
-    const raw = t[key]
-    const css = themeLengthToCss(raw)
-    if (css !== undefined) {
-      ;(t as Record<string, unknown>)[key as string] = css
-    } else if (raw !== undefined) {
-      delete (t as Record<string, unknown>)[key as string]
-    }
-  }
-  return t
+  return normalizeThemePxFields(theme) as Theme
 }
 
 /**
