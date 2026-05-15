@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase'
 import { surveyConfig, surveyConfigKey } from './surveyConfig'
+import { AppTitle } from './surveys/AppTitle'
 import { useSurveyThemeOnDocument } from './surveyTheme'
 
 type Screen = 'question' | 'confirm' | 'thanks'
@@ -89,7 +90,7 @@ export default function App() {
   return (
     <div className={`app button-style-${theme.buttonStyle}`} style={themeStyle}>
       <header className="app-header">
-        {surveyConfig.appTitle}
+        <AppTitle config={surveyConfig} />
         {surveyConfig.appSubtitle && (
           <span className="app-subtitle">{surveyConfig.appSubtitle}</span>
         )}

@@ -1,3 +1,4 @@
+import { DEFAULT_APP_TITLE_SUFFIX, buildFullAppTitle } from '../surveys/titleLines'
 import type { Question, SurveyConfig, Theme } from '../surveys/types'
 import { natoriParkSurvey } from '../surveys/natoriPark'
 
@@ -43,10 +44,18 @@ export function resolveSurveyConfigForPreview(s: SurveyConfig): SurveyConfig {
     }
   })
 
+  const appTitleLead = s.appTitleLead?.trim() || DEFAULT.appTitleLead?.trim()
+  const appTitleSuffix =
+    s.appTitleSuffix?.trim() || DEFAULT.appTitleSuffix?.trim() || DEFAULT_APP_TITLE_SUFFIX
+
   return {
     eventId: s.eventId.trim() || DEFAULT.eventId,
     surveyVersion: s.surveyVersion.trim() || DEFAULT.surveyVersion,
-    appTitle: s.appTitle.trim() || DEFAULT.appTitle,
+    appTitle:
+      s.appTitle.trim() ||
+      (appTitleLead ? buildFullAppTitle(appTitleLead, appTitleSuffix) : DEFAULT.appTitle),
+    appTitleLead: appTitleLead || undefined,
+    appTitleSuffix: appTitleLead ? appTitleSuffix : undefined,
     appSubtitle: (() => {
       const t = s.appSubtitle?.trim()
       return t || undefined

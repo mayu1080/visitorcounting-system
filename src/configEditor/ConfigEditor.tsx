@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { DEFAULT_APP_TITLE_SUFFIX, buildFullAppTitle } from '../surveys/titleLines'
 import type { Question, SurveyConfig, Theme } from '../surveys/types'
 import { natoriParkSurvey } from '../surveys/natoriPark'
 import { buildExportPayload, downloadJson } from './exportSurveyJson'
@@ -136,12 +137,45 @@ export default function ConfigEditor() {
             <h2>基本設定</h2>
             <div className="config-editor-section">
               <div className="config-editor-row">
-                <label htmlFor="f-title">タイトル（appTitle）</label>
+                <label htmlFor="f-title-lead">タイトル1行目（appTitleLead・案件名など）</label>
                 <input
-                  id="f-title"
-                  value={config.appTitle}
-                  onChange={(e) => setConfig((c) => ({ ...c, appTitle: e.target.value }))}
+                  id="f-title-lead"
+                  value={config.appTitleLead ?? ''}
+                  onChange={(e) => {
+                    const lead = e.target.value
+                    setConfig((c) => ({
+                      ...c,
+                      appTitleLead: lead || undefined,
+                      appTitle: buildFullAppTitle(
+                        lead,
+                        c.appTitleSuffix ?? DEFAULT_APP_TITLE_SUFFIX,
+                      ),
+                    }))
+                  }}
+                  placeholder="例: なとりぱーくご利用"
                 />
+              </div>
+              <div className="config-editor-row">
+                <label htmlFor="f-title-suffix">タイトル2行目（appTitleSuffix）</label>
+                <input
+                  id="f-title-suffix"
+                  value={config.appTitleSuffix ?? ''}
+                  onChange={(e) => {
+                    const suffix = e.target.value
+                    setConfig((c) => ({
+                      ...c,
+                      appTitleSuffix: suffix || undefined,
+                      appTitle: buildFullAppTitle(
+                        c.appTitleLead ?? '',
+                        suffix || DEFAULT_APP_TITLE_SUFFIX,
+                      ),
+                    }))
+                  }}
+                  placeholder={DEFAULT_APP_TITLE_SUFFIX}
+                />
+                <span className="config-editor-hint">
+                  空欄のときは「{DEFAULT_APP_TITLE_SUFFIX}」
+                </span>
               </div>
               <div className="config-editor-row">
                 <label htmlFor="f-sub">サブタイトル（appSubtitle・空で非表示）</label>

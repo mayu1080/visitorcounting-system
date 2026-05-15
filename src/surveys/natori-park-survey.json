@@ -7,6 +7,7 @@
     "eventId": "natori-park",
     "surveyVersion": "v1.0.0_2026-05-13",
     "appTitle": "なとりぱーくご利用についてのアンケート",
+    "appTitleLead": "なとりぱーくご利用",
     "progressPrefix": "質問",
     "backButton": "戻る",
     "nextButton": "次に進む",

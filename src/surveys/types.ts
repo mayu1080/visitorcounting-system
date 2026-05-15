@@ -30,7 +30,12 @@ export type Theme = {
 export type SurveyConfig = {
   eventId: string
   surveyVersion: string
+  /** 1行表示用。appTitleLead があるときはフォールバック */
   appTitle: string
+  /** 1行目（案件名など）。指定時は2行表示 */
+  appTitleLead?: string
+  /** 2行目。未指定時は「についてのアンケート」 */
+  appTitleSuffix?: string
   appSubtitle?: string
   progressPrefix: string
   backButton: string

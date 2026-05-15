@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { AppTitle } from '../surveys/AppTitle'
 import type { SurveyConfig } from '../surveys/types'
 import { surveyThemeToCssProperties } from '../surveyTheme'
 
@@ -42,7 +43,7 @@ export function SurveyPreview({ config }: Props) {
       style={themeStyle}
     >
       <header className="app-header">
-        {config.appTitle}
+        <AppTitle config={config} />
         {config.appSubtitle && <span className="app-subtitle">{config.appSubtitle}</span>}
       </header>
       <main className="app-main">

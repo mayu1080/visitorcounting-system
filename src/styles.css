@@ -69,6 +69,23 @@ body {
   color: var(--color-fg);
 }
 
+.app-title-single {
+  display: block;
+  line-height: 1.35;
+}
+
+.app-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2em;
+  line-height: 1.35;
+}
+
+.app-title-lead,
+.app-title-suffix {
+  display: block;
+}
+
 .app-subtitle {
   color: var(--color-muted);
   font-size: var(--font-subtitle);
