@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { supabase } from './supabase'
-import { surveyConfig, surveyEnvironment } from './surveyConfig'
+import { surveyConfig, surveyConfigKey } from './surveyConfig'
 
 type Screen = 'question' | 'confirm' | 'thanks'
 type Answers = Record<string, string>
@@ -77,20 +77,22 @@ export default function App() {
     if (submitting) return
     setSubmitting(true)
     setError(null)
-    const { error: insertError } = await supabase
-      .from('survey_responses')
-      .insert({
-        event_id: surveyConfig.eventId,
-        environment: surveyEnvironment,
-        survey_version: surveyConfig.surveyVersion,
-        answers,
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('submit-response', {
+        body: { configKey: surveyConfigKey, answers },
       })
-    setSubmitting(false)
-    if (insertError) {
-      setError(surveyConfig.submitError)
-      return
+      if (fnError) {
+        setError(surveyConfig.submitError)
+        return
+      }
+      if (!data || typeof data !== 'object' || (data as { ok?: boolean }).ok !== true) {
+        setError(surveyConfig.submitError)
+        return
+      }
+      setScreen('thanks')
+    } finally {
+      setSubmitting(false)
     }
-    setScreen('thanks')
   }
 
   return (

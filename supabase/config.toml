@@ -1,0 +1,7 @@
+# Supabase CLI: https://supabase.com/docs/guides/cli/config
+# ローカル検証: `supabase functions serve submit-response`
+# デプロイ: `supabase functions deploy submit-response`
+
+[functions.submit-response]
+# ログインなしの公開アンケートのため、anon からの invoke を許可する（関数内で body を検証）
+verify_jwt = false

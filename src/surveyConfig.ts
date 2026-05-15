@@ -8,14 +8,33 @@ const surveyConfigs = {
 
 type SurveyConfigName = keyof typeof surveyConfigs
 
-const configuredSurvey = import.meta.env.VITE_SURVEY_CONFIG as string | undefined
+const rawKey = import.meta.env.VITE_SURVEY_CONFIG as string | undefined
 
-export const surveyConfig =
-  configuredSurvey && configuredSurvey in surveyConfigs
-    ? surveyConfigs[configuredSurvey as SurveyConfigName]
-    : surveyConfigs.default
+function resolveSurveyConfigKey(): SurveyConfigName {
+  const key = rawKey?.trim()
+  if (!key) {
+    throw new Error(
+      'VITE_SURVEY_CONFIG is required. Set it in .env.local (dev) or Vercel (e.g. natori-park).',
+    )
+  }
+  if (!(key in surveyConfigs)) {
+    throw new Error(
+      `Unknown VITE_SURVEY_CONFIG "${key}". Allowed: ${Object.keys(surveyConfigs).join(', ')}`,
+    )
+  }
+  return key as SurveyConfigName
+}
 
-export const surveyEnvironment =
-  (import.meta.env.VITE_ENVIRONMENT as string | undefined) ?? 'test'
+if (import.meta.env.PROD) {
+  const env = (import.meta.env.VITE_ENVIRONMENT as string | undefined)?.trim()
+  if (!env) {
+    throw new Error(
+      'VITE_ENVIRONMENT is required for production builds (e.g. test or production).',
+    )
+  }
+}
+
+export const surveyConfigKey = resolveSurveyConfigKey()
+export const surveyConfig = surveyConfigs[surveyConfigKey]
 
 export const availableSurveyConfigs = Object.keys(surveyConfigs)

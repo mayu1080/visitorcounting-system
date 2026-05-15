@@ -88,8 +88,9 @@
 ## 出力
 
 - `data/survey_responses.csv`: Supabase APIから取得した回答データ
-- `outputs/{event_id}/summary.csv`: 質問ID・回答ごとの件数
-- `outputs/{event_id}/chart.png`: 全質問を1枚にまとめた横棒グラフ
+- **集計結果（`analyze_responses.py`）**
+  - `.env.local` に **`AGGREGATE_EVENT_ID` を設定している場合**: `outputs/{event_id}/summary.csv` と `outputs/{event_id}/chart.png`
+  - **`AGGREGATE_EVENT_ID` を未設定の場合**: `outputs/summary.csv` と `outputs/chart.png`（プロジェクト直下の `outputs/`）
 
 ## 初回セットアップ
 
@@ -138,12 +139,12 @@ AGGREGATE_ENVIRONMENT=production
 
 注意:
 
-- `VITE_SUPABASE_ANON_KEY` はフロントエンド用
-- `VITE_SURVEY_CONFIG` は使用するアンケート設定
-- `VITE_ENVIRONMENT` は回答保存時の環境名（本番は `production`、テストは `test`）
-- `SUPABASE_SERVICE_ROLE_KEY` はローカルPython集計用
+- `VITE_SUPABASE_ANON_KEY` はフロントエンド用（Edge Function の invoke に使用。テーブル直接 INSERT には使わない）
+- `VITE_SURVEY_CONFIG` は使用するアンケート設定（**必須**。未知の値ではアプリが起動しない）
+- `VITE_ENVIRONMENT` は **本番ビルドでは必須**（ビルド時チェック）。DB に保存される `environment` は **Supabase Edge Function のシークレット `SUBMIT_ENVIRONMENT`** で決まる
+- `SUPABASE_SERVICE_ROLE_KEY` はローカル Python 集計用
 - `AGGREGATE_EVENT_ID` / `AGGREGATE_ENVIRONMENT` は集計対象の絞り込み用
-- `SUPABASE_SERVICE_ROLE_KEY` は管理者権限のキーなので、GitHubにpushしない
+- `SUPABASE_SERVICE_ROLE_KEY` は管理者権限のキーなので、GitHub に push しない
 - `.env.local` は `.gitignore` に登録済み
 
 ## トラブルシューティング
@@ -183,7 +184,12 @@ Mac:
 
 ### グラフが古い
 
-`outputs/chart.png` を開き直す。画像ビューアがキャッシュしている場合は一度閉じて再度開く。
+出力先は `AGGREGATE_EVENT_ID` の有無で変わる（README「集計の絞り込み」参照）。
+
+- `AGGREGATE_EVENT_ID` あり: `outputs/{event_id}/chart.png`
+- なし: `outputs/chart.png`
+
+該当パスの画像を開き直す。画像ビューアがキャッシュしている場合は一度閉じて再度開く。
 
 ---
 
@@ -202,12 +208,15 @@ Mac:
 
 1. ネットワーク接続を確認（Wi-Fi が切れていないか）
 2. Supabase が稼働しているか確認（Supabase Status ページ参照）
-3. 解決しない場合は、回答数が少ない時間帯なら一度タブレットの**ブラウザをリロード**して復帰させる
+3. Edge Function **`submit-response`** がデプロイ済みで、**`SUBMIT_ENVIRONMENT`** が設定されているか Supabase ダッシュボードで確認
+4. 解決しない場合は、回答数が少ない時間帯なら一度タブレットの**ブラウザをリロード**して復帰させる
 
 ## 回答が Supabase に保存されない
 
-1. RLS のINSERTポリシーが正しく設定されているか Supabase ダッシュボードで確認
-2. Vercel の環境変数 `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` が正しいか確認
+1. Edge Function **`submit-response` がデプロイ済み**か、Supabase ダッシュボードの **Edge Functions** で確認
+2. Edge Function のシークレット **`SUBMIT_ENVIRONMENT`** が `test` または `production` に設定されているか確認
+3. RLS で **`anon` が `survey_responses` に直接 INSERT できない**状態になっているか確認（意図どおり。送信は Edge のみ）
+4. Vercel の環境変数 `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` / **`VITE_SURVEY_CONFIG`**（フロントのキーが Edge の `SURVEY_REGISTRY` と一致しているか）を確認
 
 ---
 
