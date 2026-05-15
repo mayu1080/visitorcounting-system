@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import type { CSSProperties } from 'react'
+import { themeLengthToCss } from './surveys/loadSurveyJson'
 import type { Theme } from './surveys/types'
 
 export function getButtonRadius(buttonStyle: Theme['buttonStyle']): string {
@@ -31,9 +32,10 @@ function scaled(px: number, scale: number): string {
  */
 export function surveyThemeToCssProperties(theme: Theme): CSSProperties {
   const s = theme.fontScale ?? 1
-  const radius = theme.buttonBorderRadius?.trim() || getButtonRadius(theme.buttonStyle)
+  const radius =
+    themeLengthToCss(theme.buttonBorderRadius) || getButtonRadius(theme.buttonStyle)
 
-  const titleFs = theme.titleFontSize?.trim()
+  const titleFs = themeLengthToCss(theme.titleFontSize)
   const appTitleVal = titleFs || scaled(TYPO.appTitle, s)
   const thanksTitleVal = titleFs || scaled(TYPO.title, s)
 
@@ -45,23 +47,24 @@ export function surveyThemeToCssProperties(theme: Theme): CSSProperties {
     '--radius': radius,
     '--font-app-title': appTitleVal,
     '--font-title': thanksTitleVal,
-    '--font-subtitle': theme.subtitleFontSize?.trim() || scaled(TYPO.subtitle, s),
-    '--font-question': theme.questionFontSize?.trim() || scaled(TYPO.question, s),
-    '--font-button': theme.optionFontSize?.trim() || scaled(TYPO.option, s),
-    '--font-button-primary': theme.buttonFontSize?.trim() || scaled(TYPO.buttonPrimary, s),
+    '--font-subtitle': themeLengthToCss(theme.subtitleFontSize) || scaled(TYPO.subtitle, s),
+    '--font-question': themeLengthToCss(theme.questionFontSize) || scaled(TYPO.question, s),
+    '--font-button': themeLengthToCss(theme.optionFontSize) || scaled(TYPO.option, s),
+    '--font-button-primary':
+      themeLengthToCss(theme.buttonFontSize) || scaled(TYPO.buttonPrimary, s),
     '--font-progress': scaled(TYPO.progress, s),
     '--font-note': scaled(TYPO.note, s),
     '--font-error': scaled(TYPO.error, s),
   }
 
-  const px = theme.buttonPaddingX?.trim()
-  const py = theme.buttonPaddingY?.trim()
-  if (px) out['--button-pad-x'] = px
-  if (py) out['--button-pad-y'] = py
-  const oh = theme.optionButtonHeight?.trim()
-  if (oh) out['--option-min-height'] = oh
-  const ah = theme.actionButtonHeight?.trim()
-  if (ah) out['--action-min-height'] = ah
+  const padX = themeLengthToCss(theme.buttonPaddingX)
+  const padY = themeLengthToCss(theme.buttonPaddingY)
+  if (padX) out['--button-pad-x'] = padX
+  if (padY) out['--button-pad-y'] = padY
+  const optH = themeLengthToCss(theme.optionButtonHeight)
+  if (optH) out['--option-min-height'] = optH
+  const actH = themeLengthToCss(theme.actionButtonHeight)
+  if (actH) out['--action-min-height'] = actH
 
   return out as CSSProperties
 }

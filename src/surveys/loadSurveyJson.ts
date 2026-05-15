@@ -20,17 +20,31 @@ const THEME_PX_KEYS: (keyof Theme)[] = [
   'buttonPaddingY',
 ]
 
-function isBareNumberPx(value: string): boolean {
-  return /^\d+(\.\d+)?$/.test(value.trim())
+/** ジェネレータ JSON では数値（20）や文字列（"20" / "20px"）のどちらもあり得る */
+export function themeLengthToCss(value: unknown): string | undefined {
+  if (value === undefined || value === null) return undefined
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return `${value}px`
+  }
+  if (typeof value === 'string') {
+    const v = value.trim()
+    if (!v) return undefined
+    if (/^\d+(\.\d+)?$/.test(v)) return `${v}px`
+    return v
+  }
+  return undefined
 }
 
-/** JSON 由来の theme で「32」のように単位だけ欠けている値を px 補完する */
+/** JSON 由来の theme で単位を px に揃える */
 function normalizeThemeUnits(theme: Theme): Theme {
   const t = { ...theme }
   for (const key of THEME_PX_KEYS) {
-    const v = t[key]
-    if (typeof v === 'string' && isBareNumberPx(v)) {
-      ;(t as Record<string, unknown>)[key as string] = `${v.trim()}px`
+    const raw = t[key]
+    const css = themeLengthToCss(raw)
+    if (css !== undefined) {
+      ;(t as Record<string, unknown>)[key as string] = css
+    } else if (raw !== undefined) {
+      delete (t as Record<string, unknown>)[key as string]
     }
   }
   return t
