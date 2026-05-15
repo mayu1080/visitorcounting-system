@@ -1,0 +1,236 @@
+/* Config editor only — ダーク簡易UI。アンケート本体の .app とは分離 */
+.config-editor-page {
+  min-height: 100%;
+  background: #0a0c10;
+  color: #e8eaef;
+  font-family: var(--font-family);
+  padding: 20px 24px 48px;
+}
+
+.config-editor-top {
+  max-width: 1280px;
+  margin: 0 auto 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.config-editor-top h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.config-editor-links {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.config-editor-links a {
+  color: #8ab4ff;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.config-editor-links a:hover {
+  text-decoration: underline;
+}
+
+.config-editor-layout {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(360px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .config-editor-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.config-editor-panel {
+  background: #12151c;
+  border: 1px solid #252a36;
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+
+.config-editor-panel h2 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  color: #b8c0d4;
+  font-weight: 600;
+}
+
+.config-editor-section {
+  margin-bottom: 18px;
+}
+
+.config-editor-section:last-child {
+  margin-bottom: 0;
+}
+
+.config-editor-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.config-editor-row label {
+  font-size: 0.8rem;
+  color: #9aa3b5;
+}
+
+.config-editor-row input,
+.config-editor-row select,
+.config-editor-row textarea {
+  background: #0d1016;
+  border: 1px solid #2a3140;
+  border-radius: 6px;
+  color: #e8eaef;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+}
+
+.config-editor-row textarea {
+  min-height: 64px;
+  resize: vertical;
+}
+
+.config-editor-row input:focus,
+.config-editor-row select:focus,
+.config-editor-row textarea:focus {
+  outline: none;
+  border-color: #4d6a9e;
+}
+
+.config-editor-hint {
+  font-size: 0.75rem;
+  color: #6b7380;
+}
+
+.config-editor-muted {
+  color: #7a8499;
+  font-size: 0.9rem;
+}
+
+.config-editor-question-card {
+  background: #0d1016;
+  border: 1px solid #2a3140;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.config-editor-question-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.config-editor-question-head span {
+  font-size: 0.85rem;
+  color: #9aa3b5;
+}
+
+.config-editor-option-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.config-editor-option-row input {
+  flex: 1;
+}
+
+.config-editor-btn {
+  background: #2a3148;
+  border: 1px solid #3d465c;
+  color: #e8eaef;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.config-editor-btn:hover {
+  background: #343d56;
+}
+
+.config-editor-btn.danger {
+  border-color: #6b3030;
+  color: #ff9b9b;
+}
+
+.config-editor-btn.primary {
+  background: #2d4a7a;
+  border-color: #4d6a9e;
+}
+
+.config-editor-btn.primary:hover {
+  background: #35588f;
+}
+
+.config-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.config-editor-json {
+  width: 100%;
+  min-height: 200px;
+  max-height: 360px;
+  background: #080a0e;
+  border: 1px solid #2a3140;
+  border-radius: 6px;
+  color: #c5cad8;
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  padding: 10px;
+  overflow: auto;
+  white-space: pre;
+}
+
+.config-editor-preview-wrap {
+  background: #080a0e;
+  border: 1px solid #2a3140;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.survey-preview-scale {
+  transform: scale(0.72);
+  transform-origin: top center;
+  min-height: 520px;
+  padding-top: 24px;
+  padding-bottom: 24px;
+}
+
+details.config-editor-details {
+  margin-top: 8px;
+  border: 1px solid #2a3140;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #0d1016;
+}
+
+details.config-editor-details summary {
+  cursor: pointer;
+  color: #9aa3b5;
+  font-size: 0.9rem;
+}
+
+details.config-editor-details[open] summary {
+  margin-bottom: 12px;
+}

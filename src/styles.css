@@ -135,7 +135,7 @@ button {
 }
 
 .primary {
-  padding: var(--button-padding);
+  padding: var(--button-pad-y, var(--button-padding)) var(--button-pad-x, var(--button-padding));
   font-size: var(--font-button-primary);
   font-weight: 700;
   background: var(--color-accent);
@@ -144,7 +144,8 @@ button {
 }
 
 .option {
-  padding: var(--button-padding);
+  padding: var(--button-pad-y, var(--button-padding)) var(--button-pad-x, var(--button-padding));
+  min-height: var(--option-min-height, auto);
   font-size: var(--font-button);
   background: var(--color-surface);
   color: var(--color-fg);
@@ -173,7 +174,8 @@ button {
 
 .nav-button {
   flex: 1;
-  padding: var(--button-padding);
+  padding: var(--button-pad-y, var(--button-padding)) var(--button-pad-x, var(--button-padding));
+  min-height: var(--action-min-height, auto);
   font-size: var(--font-button-primary);
   font-weight: 700;
   border-radius: var(--radius);

@@ -12,9 +12,9 @@ import os
 from pathlib import Path
 
 import pandas as pd
-from dotenv import load_dotenv
 
-ENV_FILE = Path(".env.local")
+from aggregate_cli import ENV_FILE, init_aggregate_env
+
 OUTPUT_CSV = Path("data/survey_responses.csv")
 TABLE_NAME = "survey_responses"
 
@@ -26,7 +26,7 @@ def main() -> None:
             "SUPABASE_URL と SUPABASE_SERVICE_ROLE_KEY を設定したファイルを配置してください"
         )
 
-    load_dotenv(ENV_FILE)
+    event_id_filter, environment_filter = init_aggregate_env()
     url = os.environ.get("SUPABASE_URL")
     key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 
@@ -46,7 +46,14 @@ def main() -> None:
     client = create_client(url, key)
 
     try:
-        response = client.table(TABLE_NAME).select("*").execute()
+        query = client.table(TABLE_NAME).select("*")
+        if event_id_filter:
+            query = query.eq("event_id", event_id_filter)
+            print(f"fetch filter event_id: {event_id_filter}")
+        if environment_filter:
+            query = query.eq("environment", environment_filter)
+            print(f"fetch filter environment: {environment_filter}")
+        response = query.execute()
     except Exception as exc:
         raise SystemExit(f"Supabase API取得に失敗しました: {exc}") from exc
 

@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from './supabase'
 import { surveyConfig, surveyConfigKey } from './surveyConfig'
+import { useSurveyThemeOnDocument } from './surveyTheme'
 
 type Screen = 'question' | 'confirm' | 'thanks'
 type Answers = Record<string, string>
@@ -19,17 +20,7 @@ export default function App() {
   const isFirstQuestion = currentQuestionIndex === 0
   const isLastQuestion = currentQuestionIndex === questions.length - 1
   const hasAnsweredCurrent = Boolean(answers[question.id])
-  const themeStyle = useMemo(
-    () =>
-      ({
-        '--color-bg': theme.backgroundColor,
-        '--color-fg': theme.textColor,
-        '--color-accent': theme.accentColor,
-        '--font-scale': String(theme.fontScale),
-        '--radius': getButtonRadius(theme.buttonStyle),
-      }) as CSSProperties,
-    [theme],
-  )
+  const themeStyle = useSurveyThemeOnDocument(theme)
 
   useEffect(() => {
     if (screen !== 'thanks') return
@@ -189,10 +180,4 @@ export default function App() {
       </main>
     </div>
   )
-}
-
-function getButtonRadius(buttonStyle: typeof surveyConfig.theme.buttonStyle) {
-  if (buttonStyle === 'square') return '4px'
-  if (buttonStyle === 'pill') return '999px'
-  return '16px'
 }

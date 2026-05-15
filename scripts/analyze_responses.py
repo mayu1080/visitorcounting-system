@@ -17,11 +17,10 @@ from pathlib import Path
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
-from dotenv import load_dotenv
 from matplotlib import font_manager
 
+from aggregate_cli import init_aggregate_env
 
-ENV_FILE = Path(".env.local")
 INPUT_CSV = Path("data/survey_responses.csv")
 OUTPUT_DIR = Path("outputs")
 
@@ -48,9 +47,7 @@ QUESTION_OPTIONS_ORDER = {
 
 
 def main() -> None:
-    load_dotenv(ENV_FILE)
-    event_id_filter = os.environ.get("AGGREGATE_EVENT_ID")
-    environment_filter = os.environ.get("AGGREGATE_ENVIRONMENT")
+    event_id_filter, environment_filter = init_aggregate_env()
 
     if not INPUT_CSV.exists():
         raise SystemExit(f"入力CSVが見つかりません: {INPUT_CSV}")

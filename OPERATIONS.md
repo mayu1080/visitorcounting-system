@@ -2,6 +2,8 @@
 
 このドキュメントは、**現場タブレット運用** と **オフィスPCでの集計** の両方の手順をまとめたものです。
 
+**アンケート案件の追加・JSON・Edge Function 連携**など開発向けの手順は **`SURVEYS.md`** を参照してください。
+
 ---
 
 # 現場運用（タブレット）
@@ -68,22 +70,33 @@
 
 プロジェクトフォルダでターミナルを開き、以下を実行する。
 
+**案件ごとに集計する場合**は、実行コマンドで `event_id`（と必要なら `environment`）を指定する。`.env.local` を毎回書き換える必要はない（コマンド引数が `.env.local` より優先される）。
+
 ### Windows / PowerShell
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\update_reports.py
+# なとりぱーく（本番データ）の例
+.\.venv\Scripts\python.exe scripts\update_reports.py -e natori-park -E production
+
+# 茨城バニラドーム（本番データ）の例
+.\.venv\Scripts\python.exe scripts\update_reports.py -e ibaraki-vanilladome -E production
+
+# 長い形式でも可
+.\.venv\Scripts\python.exe scripts\update_reports.py --event-id natori-park --environment production
 ```
 
 ### Mac / Terminal
 
 ```bash
-./.venv/bin/python scripts/update_reports.py
+./.venv/bin/python scripts/update_reports.py -e natori-park -E production
 ```
+
+`.env.local` に `AGGREGATE_EVENT_ID` / `AGGREGATE_ENVIRONMENT` を書いておけば、引数を省略したときだけそちらが使われる。
 
 このコマンドは内部で以下を順に実行する。
 
-1. Supabase APIから回答を取得し、`data/survey_responses.csv` に保存
-2. `outputs/{event_id}/summary.csv` と `outputs/{event_id}/chart.png` を生成
+1. Supabase API から回答を取得し、`data/survey_responses.csv` に保存（**`-e` / `-E` 指定時は API 取得段階から絞り込み**）
+2. `outputs/{event_id}/summary.csv` と `outputs/{event_id}/chart.png` を生成（同じ絞り込みを再適用）
 
 ## 出力
 
@@ -210,6 +223,15 @@ Mac:
 2. Supabase が稼働しているか確認（Supabase Status ページ参照）
 3. Edge Function **`submit-response`** がデプロイ済みで、**`SUBMIT_ENVIRONMENT`** が設定されているか Supabase ダッシュボードで確認
 4. 解決しない場合は、回答数が少ない時間帯なら一度タブレットの**ブラウザをリロード**して復帰させる
+
+## タブレット（Fully Kiosk）の画面が真っ黒
+
+1. **URL が正しいか**（案件用 Vercel の URL。古い URL や Preview URL になっていないか）
+2. **Fully Kiosk の Start URL を更新**したあと、端末で **アプリのデータを消去**または **強制リロード**（キャッシュされた古い JS のままのことがある）
+3. PC のブラウザで同じ URL を開き、表示・送信できるか確認する
+4. 表示できない場合は **Vercel の環境変数**（`VITE_SURVEY_CONFIG` / `VITE_SUPABASE_*`）と、デプロイが成功しているかを確認する
+5. 画面は暗いが **質問文だけ見えない**場合は、テーマ JSON の `textColor` と `backgroundColor` が同系色になっていないか `/config-editor` で確認する
+6. レイアウト変更後は **再デプロイ済み**か確認する（`main` push → Vercel Ready）
 
 ## 回答が Supabase に保存されない
 

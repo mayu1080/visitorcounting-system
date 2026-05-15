@@ -139,33 +139,44 @@ cp .env.example .env.local
 npm run dev
 ```
 
+ブラウザで **`http://localhost:5173/config-editor`**（ポートは環境による）を開くと、ローカル専用の **Survey config ジェネレータ**（認証なし・DB なし）が使える。**`App` を動的 import しているため、`.env.local` が未設定でもこの URL だけは開ける**（アンケート本体は従来どおり `VITE_SURVEY_CONFIG` 等が必要）。
+
+## Survey config ジェネレータ（`/config-editor`）
+
+- **目的:** `src/surveys/*.ts` を手で書かずに、アンケート設定のたたき台を作る（**設定ジェネレータ**）。保存は JSON ダウンロードのみ。
+- **ルーティング:** React Router は使わず、`main.tsx` で `pathname === '/config-editor'` のときだけ `ConfigEditor` を表示する。
+- **Vercel:** 直リンクのため `vercel.json` で SPA 用 rewrite を設定している。
+
+### 使い方
+
+1. `/config-editor` を開く（開発時は上記 URL）。
+2. 左カラムで基本設定・テーマ・フォント（px）・質問を編集する。空欄のフォント系は **既存の既定（fontScale 連動の計算式）** を使う。
+3. 右カラムで **プレビュー** と **JSON** を確認する。
+4. **JSON をダウンロード**し、`src/surveys/` に保存する（例: `natori-park-survey.json`）。**ダウンロードファイル全体**（`_readme` / `meta` / `survey` 付き）のままでよい。
+5. 案件用の **`.ts` は薄く**し、`loadSurveyFromJson` で JSON を読み込む（`src/surveys/natoriPark.ts` が例）。**案件を増やすときの全体手順は `SURVEYS.md`**。
+6. `src/surveyConfig.ts` の `surveyConfigs` と、**`supabase/functions/submit-response/index.ts` の `SURVEY_REGISTRY`** を手動で揃える（送信バリデーション用）。
+
+`meta.environment` は運用メモ用で、TypeScript の `SurveyConfig` 型には含めない。実際の DB の `environment` は Edge の **`SUBMIT_ENVIRONMENT`** が決める。
+
 ## 集計・グラフ化
 
 オフィス PC での集計・グラフ生成は `OPERATIONS.md` 参照。
 
 ## 複数案件対応
 
-コードベースは1つのまま、案件ごとのアンケート内容・表示文言・テーマを `src/surveys/` 配下の設定ファイルで切り替える。
+コードベースは1つのまま、案件ごとのアンケート内容・表示文言・テーマを `src/surveys/` 配下で切り替える。**案件の追加手順・JSON 運用・Edge `SURVEY_REGISTRY` 同期の詳細は `SURVEYS.md` を参照。**
 
 ### 設定ファイル
 
 - `src/surveys/types.ts`: survey config の型定義
+- `src/surveys/loadSurveyJson.ts`: ジェネレータの JSON（`survey` ラップあり／なし）を **`SurveyConfig` に読み込む**ヘルパー
 - `src/surveys/default.ts`: **`VITE_SURVEY_CONFIG=default` のとき**の設定
-- `src/surveys/natoriPark.ts`: なとりぱーく用の設定
+- `src/surveys/natoriPark.ts`: なとりぱーく用（**`natori-park-survey.json` を import** して `loadSurveyFromJson`）
 - `src/surveyConfig.ts`: `VITE_SURVEY_CONFIG` を見て設定を選ぶローダー（**未設定・未知キーはエラー**）
 
 ### 案件追加手順
 
-1. `src/surveys/yourEvent.ts` を作成
-2. `SurveyConfig` 型に合わせて以下を定義
-   - `eventId`
-   - `surveyVersion`（例: `v1.0.0_2026-05-13`）
-   - 表示文言
-   - `questions`
-   - `theme`
-3. `src/surveyConfig.ts` の `surveyConfigs` に追加
-4. **`supabase/functions/submit-response/index.ts` の `SURVEY_REGISTRY` に同じキー・設問・選択肢・event_id / survey_version を追加**
-5. `.env.local` または Vercel の Environment Variables で `VITE_SURVEY_CONFIG` をそのキーに設定
+`SURVEYS.md` の **新規案件チェックリスト** に従う（ジェネレータ → `*-survey.json` → 薄い `*.ts` → `surveyConfig.ts` → Edge `SURVEY_REGISTRY` → 環境変数）。
 
 ### theme 設定
 
@@ -191,7 +202,7 @@ Vite の環境変数はビルド時に固定される。案件を切り替える
 - `VITE_ENVIRONMENT`: 本番ビルド必須（例: `production` / `test`）
 - **Supabase Edge の `SUBMIT_ENVIRONMENT`**: 行に保存される環境名（本番 DB では `production` など）
 
-複数案件を**同時**運用する場合は、同じ GitHub リポジトリを使って **Vercel プロジェクトを案件ごとに分ける**。プロジェクトごとに `VITE_SURVEY_CONFIG` と公開 URL を分ける。
+複数案件を**同時**運用する場合は、同じ GitHub リポジトリを使って **Vercel プロジェクトを案件ごとに分ける**（**Add New → Project** で2件目を作る。同じプロジェクト内に URL を増やすことはできない）。画面操作の詳細は **`SURVEYS.md`「別 URL で別案件を並行運用」** を参照。プロジェクトごとに `VITE_SURVEY_CONFIG` と公開 URL を分ける。
 
 ### 集計の絞り込み
 
