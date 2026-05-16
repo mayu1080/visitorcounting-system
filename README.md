@@ -37,7 +37,8 @@
 | カラム | 型 | 用途 |
 | --- | --- | --- |
 | id | uuid | 主キー |
-| created_at | timestamptz | 回答日時 |
+| created_at | timestamptz | 行作成日時（Supabase 既定。未使用なら `submitted_at` を参照） |
+| submitted_at | timestamptz | **データ送信日時**（Edge が INSERT 時に設定） |
 | event_id | text | 案件識別子（**Edge 側で固定**） |
 | environment | text | `test` / `production`（**Edge のシークレット `SUBMIT_ENVIRONMENT` で固定**） |
 | survey_version | text | アンケート版（**Edge 側で固定**） |
@@ -50,25 +51,36 @@ alter table survey_responses
 add column if not exists event_id text,
 add column if not exists environment text,
 add column if not exists survey_version text;
+
+-- 送信日時（推奨: supabase/migrations/20260516120000_add_submitted_at.sql を SQL Editor で実行）
+alter table survey_responses
+add column if not exists submitted_at timestamptz not null default now();
 ```
 
 ### RLS（行レベルセキュリティ）
 
 **方針:** `anon` キー（ブラウザ）からは `survey_responses` を **直接 INSERT できない** ようにする。INSERT は Edge Function の `service_role` のみ（RLS バイパス）。
 
-Supabase SQL Editor などで実行:
+Supabase SQL Editor などで実行（`supabase/migrations/20260516130000_survey_responses_rls.sql` と同内容）:
 
 ```sql
-alter table survey_responses enable row level security;
+-- RLS を有効化
+alter table public.survey_responses enable row level security;
 
-drop policy if exists "allow anon insert" on survey_responses;
-drop policy if exists "allow anon select" on survey_responses;
-drop policy if exists "allow anon update" on survey_responses;
-drop policy if exists "allow anon delete" on survey_responses;
+-- 古い anon 向けポリシーを削除（WITH CHECK (true) などは Security Advisor の「RLS Policy Always True」警告の原因）
+drop policy if exists "allow anon insert" on public.survey_responses;
+drop policy if exists "allow anon select" on public.survey_responses;
+drop policy if exists "allow anon update" on public.survey_responses;
+drop policy if exists "allow anon delete" on public.survey_responses;
+drop policy if exists "anon can insert responses" on public.survey_responses;
+
+-- anon 向けの INSERT / SELECT / UPDATE / DELETE policy は作らない
+-- Edge Function は service_role key 経由で insert する（RLS バイパス）
 ```
 
 - **`anon` 向けの INSERT / SELECT / UPDATE / DELETE ポリシーは付けない**（付いていれば上記で削除）。
 - 集計用 Python は **`SUPABASE_SERVICE_ROLE_KEY`** で取得する（RLS バイパス）。
+- 実行後、残存ポリシー確認: `select policyname from pg_policies where tablename = 'survey_responses';`（不要な行が 0 件なら OK）
 
 **デプロイ順の目安:** 先に Edge Function `submit-response` をデプロイし、フロントを invoke する版に切り替えた**後**に、anon の INSERT ポリシーを削除する。順序が逆だと、更新前のフロントが送信できなくなる。
 

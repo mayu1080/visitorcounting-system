@@ -15,7 +15,7 @@
 
 ## 運用チェックリスト
 
-1. Supabase で **anon の `survey_responses` INSERT ポリシーを削除**し、README の SQL と一致させる。
+1. Supabase で **anon の `survey_responses` ポリシーを削除**し、README / `supabase/migrations/20260516130000_survey_responses_rls.sql` と一致させる（`anon can insert responses` など `WITH CHECK (true)` のポリシーは残さない）。
 2. Edge Function **`submit-response` をデプロイ**し、シークレット **`SUBMIT_ENVIRONMENT`** を `test` または `production` に設定する。
 3. Vercel の本番ビルドで **`VITE_SURVEY_CONFIG` / `VITE_ENVIRONMENT` が必ず設定**されるようにする（未設定だとビルド時に落ちる）。
 4. 本番 Supabase の `SUBMIT_ENVIRONMENT` と、運用上の意味（本番データか検証か）を揃える。

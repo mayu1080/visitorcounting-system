@@ -221,17 +221,14 @@ Mac:
 
 1. ネットワーク接続を確認（Wi-Fi が切れていないか）
 2. Supabase が稼働しているか確認（Supabase Status ページ参照）
-3. Edge Function **`submit-response`** がデプロイ済みで、**`SUBMIT_ENVIRONMENT`** が設定されているか Supabase ダッシュボードで確認
-4. 解決しない場合は、回答数が少ない時間帯なら一度タブレットの**ブラウザをリロード**して復帰させる
+3. Edge Function **`submit-response`** がデプロイ済みか確認
+4. Edge Function のシークレット **`SUBMIT_ENVIRONMENT`** が `test` または `production` か確認（**未設定だと 500 になりやすい**）
+5. PC のブラウザで同じ URL を開き、F12 → **Console** で `submit-response failed:` を確認（`Invalid answers` / `Unknown configKey` / `Server misconfiguration` など）
+6. Supabase → **Edge Functions** → `submit-response` → **Logs** で送信時刻付近を確認
+7. Vercel の **`VITE_SURVEY_CONFIG`** が Edge の **`SURVEY_REGISTRY`** のキーと一致しているか
+8. 解決しない場合は、一度タブレットの**ブラウザをリロード**して復帰させる
 
-## タブレット（Fully Kiosk）の画面が真っ黒
-
-1. **URL が正しいか**（案件用 Vercel の URL。古い URL や Preview URL になっていないか）
-2. **Fully Kiosk の Start URL を更新**したあと、端末で **アプリのデータを消去**または **強制リロード**（キャッシュされた古い JS のままのことがある）
-3. PC のブラウザで同じ URL を開き、表示・送信できるか確認する
-4. 表示できない場合は **Vercel の環境変数**（`VITE_SURVEY_CONFIG` / `VITE_SUPABASE_*`）と、デプロイが成功しているかを確認する
-5. 画面は暗いが **質問文だけ見えない**場合は、テーマ JSON の `textColor` と `backgroundColor` が同系色になっていないか `/config-editor` で確認する
-6. レイアウト変更後は **再デプロイ済み**か確認する（`main` push → Vercel Ready）
+**PostHog の `headerUpgradeCta` など:** Supabase **ダッシュボード画面**の分析用エラーであり、**来場者アンケートの送信とは無関係**です。
 
 ## 回答が Supabase に保存されない
 

@@ -173,11 +173,14 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 
+  const submittedAt = new Date().toISOString()
+
   const { error: insertError } = await admin.from('survey_responses').insert({
     event_id: entry.eventId,
     environment: submitEnv,
     survey_version: entry.surveyVersion,
     answers: cleaned,
+    submitted_at: submittedAt,
   })
 
   if (insertError) {

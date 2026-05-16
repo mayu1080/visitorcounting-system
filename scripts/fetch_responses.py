@@ -73,6 +73,7 @@ def main() -> None:
             columns=[
                 "id",
                 "created_at",
+                "submitted_at",
                 "event_id",
                 "environment",
                 "survey_version",

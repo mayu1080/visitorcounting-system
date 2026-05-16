@@ -74,10 +74,20 @@ export default function App() {
         body: { configKey: surveyConfigKey, answers },
       })
       if (fnError) {
+        const detail =
+          data && typeof data === 'object' && 'error' in data
+            ? String((data as { error: unknown }).error)
+            : fnError.message
+        console.error('submit-response failed:', detail, { configKey: surveyConfigKey, data })
         setError(surveyConfig.submitError)
         return
       }
       if (!data || typeof data !== 'object' || (data as { ok?: boolean }).ok !== true) {
+        const detail =
+          data && typeof data === 'object' && 'error' in data
+            ? String((data as { error: unknown }).error)
+            : 'unexpected response'
+        console.error('submit-response unexpected:', detail, data)
         setError(surveyConfig.submitError)
         return
       }
