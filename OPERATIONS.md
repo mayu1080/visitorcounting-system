@@ -237,6 +237,35 @@ Mac:
 3. RLS で **`anon` が `survey_responses` に直接 INSERT できない**状態になっているか確認（意図どおり。送信は Edge のみ）
 4. Vercel の環境変数 `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` / **`VITE_SURVEY_CONFIG`**（フロントのキーが Edge の `SURVEY_REGISTRY` と一致しているか）を確認
 
+## 集計で「取得件数: 0」／集計できる回答が1件も見つかりません
+
+`update_reports.py` は **`SUPABASE_SERVICE_ROLE_KEY`** で取得するため、**RLS ポリシーを削除したこと自体は原因になりません**（`service_role` は RLS をバイパスする）。
+
+よくある原因（優先度順）:
+
+| 原因 | 症状 | 対処 |
+|------|------|------|
+| **`.env.local` に anon キーを入れている** | エラーなく 0 件 | Project Settings → API → **service_role**（secret）を `SUPABASE_SERVICE_ROLE_KEY` に設定 |
+| **`-E production` と DB の `environment` が不一致** | Table Editor には行があるが 0 件 | Edge の **`SUBMIT_ENVIRONMENT`** が `test` なら `-E test` で再実行。Table Editor の `environment` 列を確認 |
+| **別 Supabase プロジェクトの URL/キー** | 本番テーブルに行があるのに 0 件 | `SUPABASE_URL` が Vercel の `VITE_SUPABASE_URL` と同じプロジェクトか確認 |
+| **フィルタだけ不一致** | `-e` なしでは取れる | `fetch_responses.py` 実行時に診断ログで `event_id` / `environment` の内訳が出る（スクリプト更新済み） |
+
+確認コマンド:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\fetch_responses.py -e natori-park -E production
+```
+
+先頭に `API key role: service_role` と出ればキー種別は OK。`role は 'anon'` と出たらキーを差し替える。
+
+フィルタなしで件数だけ見る:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\fetch_responses.py
+```
+
+`data/survey_responses.csv` の `environment` 列の値に合わせて `-E` を指定する。
+
 ---
 
 # Mac固有の補足（未検証・参考）

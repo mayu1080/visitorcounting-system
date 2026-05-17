@@ -14,6 +14,7 @@ from pathlib import Path
 import pandas as pd
 
 from aggregate_cli import ENV_FILE, init_aggregate_env
+from supabase_aggregate_diag import print_filter_mismatch_hint, warn_if_not_service_role
 
 OUTPUT_CSV = Path("data/survey_responses.csv")
 TABLE_NAME = "survey_responses"
@@ -44,6 +45,7 @@ def main() -> None:
         ) from exc
 
     client = create_client(url, key)
+    warn_if_not_service_role(key)
 
     try:
         query = client.table(TABLE_NAME).select("*")
@@ -59,6 +61,10 @@ def main() -> None:
 
     rows = response.data or []
     print(f"取得件数: {len(rows)}")
+
+    if len(rows) == 0 and (event_id_filter or environment_filter):
+        print("--- 0 件のため診断を実行します ---")
+        print_filter_mismatch_hint(client, TABLE_NAME, event_id_filter, environment_filter)
 
     if rows:
         df = pd.DataFrame(rows)
